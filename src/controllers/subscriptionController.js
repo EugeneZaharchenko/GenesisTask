@@ -1,4 +1,4 @@
-const { subscribe } = require('../services/subscriptionService');
+const { subscribe, confirm, unsubscribe } = require('../services/subscriptionService');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REPO_REGEX = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
@@ -22,4 +22,22 @@ async function handleSubscribe(req, res) {
   );
 }
 
-module.exports = { handleSubscribe };
+function handleConfirm(req, res) {
+  const { token } = req.params;
+  const result = confirm(token);
+
+  return res.status(result.status).json(
+    result.error ? { error: result.error } : { message: result.message }
+  );
+}
+
+function handleUnsubscribe(req, res) {
+  const { token } = req.params;
+  const result = unsubscribe(token);
+
+  return res.status(result.status).json(
+    result.error ? { error: result.error } : { message: result.message }
+  );
+}
+
+module.exports = { handleSubscribe, handleConfirm, handleUnsubscribe };
