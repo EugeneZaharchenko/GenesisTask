@@ -59,4 +59,18 @@ function unsubscribe(token) {
   return { status: 200, message: 'Unsubscribed successfully' };
 }
 
-module.exports = { subscribe, confirm, unsubscribe };
+function getSubscriptions(email) {
+  const rows = db.prepare(`
+    SELECT r.owner, r.repo, s.created_at
+    FROM subscriptions s
+    JOIN repositories r ON r.id = s.repository_id
+    WHERE s.email = ? AND s.confirmed = true
+  `).all(email);
+
+  return rows.map((row) => ({
+    repo: `${row.owner}/${row.repo}`,
+    created_at: row.created_at
+  }));
+}
+
+module.exports = { subscribe, confirm, unsubscribe, getSubscriptions };

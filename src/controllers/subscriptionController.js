@@ -1,4 +1,4 @@
-const { subscribe, confirm, unsubscribe } = require('../services/subscriptionService');
+const { subscribe, confirm, unsubscribe, getSubscriptions } = require('../services/subscriptionService');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REPO_REGEX = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
@@ -40,4 +40,16 @@ function handleUnsubscribe(req, res) {
   );
 }
 
-module.exports = { handleSubscribe, handleConfirm, handleUnsubscribe };
+function handleGetSubscriptions(req, res) {
+  const { email } = req.query;
+
+  if (!email || !EMAIL_REGEX.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  const subscriptions = getSubscriptions(email);
+
+  return res.status(200).json(subscriptions);
+}
+
+module.exports = { handleSubscribe, handleConfirm, handleUnsubscribe, handleGetSubscriptions };
