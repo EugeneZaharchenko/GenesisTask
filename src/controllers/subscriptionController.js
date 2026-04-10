@@ -47,9 +47,12 @@ function handleGetSubscriptions(req, res) {
     return res.status(400).json({ error: 'Invalid email format' });
   }
 
-  const subscriptions = getSubscriptions(email);
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
 
-  return res.status(200).json(subscriptions);
+  const result = getSubscriptions(email, page, limit);
+
+  return res.status(200).json(result);
 }
 
 module.exports = { handleSubscribe, handleConfirm, handleUnsubscribe, handleGetSubscriptions };
