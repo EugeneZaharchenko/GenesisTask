@@ -2,7 +2,7 @@ const db = require('../db/database');
 const { getLatestRelease } = require('./githubService');
 const { sendReleaseNotification } = require('./emailService');
 
-const INTERVAL_MS = 5 * 60 * 1000;
+const INTERVAL_MS = parseInt(process.env.SCANNER_INTERVAL_MS) || 5 * 60 * 1000;
 
 async function checkReleases() {
   const repos = db.prepare(`
@@ -28,7 +28,7 @@ async function checkReleases() {
         `).all(repo.id);
 
         for (const sub of subscribers) {
-          sendReleaseNotification(sub.email, `${repo.owner}/${repo.repo}`, latestTag);
+          await sendReleaseNotification(sub.email, `${repo.owner}/${repo.repo}`, latestTag);
         }
       }
     }

@@ -26,7 +26,7 @@ async function subscribe(email, owner, repo) {
     'INSERT INTO subscriptions (email, repository_id, token) VALUES (?, ?, ?)'
   ).run(email, repository.id, token);
 
-  sendConfirmationEmail(email, token);
+  await sendConfirmationEmail(email, token);
 
   return { status: 200, token };
 }

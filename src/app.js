@@ -1,5 +1,6 @@
 const express = require('express');
 const subscriptionRoutes = require('./routes/subscriptions');
+const { apiKeyAuth } = require('./middleware/auth');
 
 const app = express();
 
@@ -9,6 +10,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.use('/api', subscriptionRoutes);
+app.use('/api', apiKeyAuth, subscriptionRoutes);
 
 module.exports = app;
