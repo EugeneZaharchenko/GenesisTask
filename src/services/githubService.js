@@ -10,7 +10,6 @@ function checkRepoExists(owner, repo) {
     };
 
     const req = https.request(options, (res) => {
-
       res.on('data', () => {});
       res.on('end', () => {
         if (res.statusCode === 200) {
@@ -28,4 +27,33 @@ function checkRepoExists(owner, repo) {
   });
 }
 
-module.exports = { checkRepoExists };
+function getLatestRelease(owner, repo) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: `/repos/${owner}/${repo}/releases/latest`,
+      method: 'GET',
+      headers: { 'User-Agent': 'genesis-release-notifier' }
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          const data = JSON.parse(body);
+          resolve(data.tag_name);
+        } else if (res.statusCode === 404) {
+          resolve(null);
+        } else {
+          reject(new Error(`GitHub API error: ${res.statusCode}`));
+        }
+      });
+    });
+
+    req.on('error', (err) => reject(err));
+    req.end();
+  });
+}
+
+module.exports = { checkRepoExists, getLatestRelease };
