@@ -22,8 +22,16 @@ function runMigrations() {
 
   for (const file of files) {
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
-    db.exec(sql);
-    console.log(`Migration applied: ${file}`);
+    try {
+      db.exec(sql);
+      console.log(`Migration applied: ${file}`);
+    } catch (err) {
+      if (err.message.includes('duplicate column name') || err.message.includes('already exists')) {
+        console.log(`Migration already applied (skipped): ${file}`);
+      } else {
+        throw err;
+      }
+    }
   }
 }
 

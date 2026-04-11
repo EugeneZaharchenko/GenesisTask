@@ -57,7 +57,7 @@ describe('subscribe', () => {
     const result = await subscribe('user@example.com', 'owner', 'repo');
 
     expect(result.status).toBe(200);
-    expect(sendConfirmationEmail).toHaveBeenCalledWith('user@example.com', expect.any(String));
+    expect(sendConfirmationEmail).toHaveBeenCalledWith('user@example.com', expect.any(String), expect.any(String));
   });
 });
 

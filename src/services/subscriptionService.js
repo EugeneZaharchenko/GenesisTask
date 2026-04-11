@@ -21,14 +21,15 @@ async function subscribe(email, owner, repo) {
     return { status: 409, error: 'Subscription already exists' };
   }
 
-  const token = generateToken();
+  const confirmToken = generateToken();
+  const unsubscribeToken = generateToken();
   db.prepare(
-    'INSERT INTO subscriptions (email, repository_id, token) VALUES (?, ?, ?)'
-  ).run(email, repository.id, token);
+    'INSERT INTO subscriptions (email, repository_id, token, unsubscribe_token) VALUES (?, ?, ?, ?)'
+  ).run(email, repository.id, confirmToken, unsubscribeToken);
 
-  await sendConfirmationEmail(email, token);
+  await sendConfirmationEmail(email, confirmToken, unsubscribeToken);
 
-  return { status: 200, token };
+  return { status: 200, token: confirmToken };
 }
 
 function confirm(token) {
@@ -48,13 +49,13 @@ function confirm(token) {
 }
 
 function unsubscribe(token) {
-  const subscription = db.prepare('SELECT id FROM subscriptions WHERE token = ?').get(token);
+  const subscription = db.prepare('SELECT id FROM subscriptions WHERE unsubscribe_token = ?').get(token);
 
   if (!subscription) {
     return { status: 404, error: 'Token not found' };
   }
 
-  db.prepare('DELETE FROM subscriptions WHERE token = ?').run(token);
+  db.prepare('DELETE FROM subscriptions WHERE unsubscribe_token = ?').run(token);
 
   return { status: 200, message: 'Unsubscribed successfully' };
 }

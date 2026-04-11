@@ -18,13 +18,13 @@ async function getTransporter() {
   return transporter;
 }
 
-async function sendConfirmationEmail(email, token) {
+async function sendConfirmationEmail(email, confirmToken, unsubscribeToken) {
   const transport = await getTransporter();
   const info = await transport.sendMail({
     from: '"Release Notifier" <noreply@releasenotifier.dev>',
     to: email,
     subject: 'Confirm your subscription',
-    text: `Please confirm your subscription: /api/confirm/${token}`,
+    text: `Please confirm your subscription: /api/confirm/${confirmToken}\n\nTo unsubscribe at any time: /api/unsubscribe/${unsubscribeToken}`,
   });
 
   console.log('Confirmation email preview: ' + nodemailer.getTestMessageUrl(info));
