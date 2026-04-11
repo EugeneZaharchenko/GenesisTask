@@ -114,7 +114,7 @@ describe('unsubscribe', () => {
 });
 
 describe('getSubscriptions', () => {
-  test('returns all confirmed subscriptions as array when no pagination args', () => {
+  test('returns all confirmed subscriptions with envelope when no pagination args', () => {
     db.prepare
       .mockReturnValueOnce({ get: jest.fn().mockReturnValue({ count: 1 }) })
       .mockReturnValueOnce({
@@ -125,19 +125,22 @@ describe('getSubscriptions', () => {
 
     const result = getSubscriptions('user@example.com');
 
-    expect(Array.isArray(result)).toBe(true);
-    expect(result).toHaveLength(1);
-    expect(result[0].repo).toBe('expressjs/express');
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].repo).toBe('expressjs/express');
+    expect(result.meta.total).toBe(1);
+    expect(result.meta.page).toBeNull();
+    expect(result.meta.limit).toBeNull();
   });
 
-  test('returns empty array if no subscriptions when no pagination args', () => {
+  test('returns empty data with envelope if no subscriptions when no pagination args', () => {
     db.prepare
       .mockReturnValueOnce({ get: jest.fn().mockReturnValue({ count: 0 }) })
       .mockReturnValueOnce({ all: jest.fn().mockReturnValue([]) });
 
     const result = getSubscriptions('nobody@example.com');
 
-    expect(result).toEqual([]);
+    expect(result.data).toEqual([]);
+    expect(result.meta.total).toBe(0);
   });
 
   test('returns paginated envelope when page and limit provided', () => {

@@ -91,11 +91,7 @@ function getSubscriptions(email, page, limit) {
     created_at: row.created_at
   }));
 
-  if (paginate) {
-    return { data, meta: { total, page, limit } };
-  }
-
-  return data;
+  return { data, meta: { total, page: page ?? null, limit: limit ?? null } };
 }
 
 module.exports = { subscribe, confirm, unsubscribe, getSubscriptions };
