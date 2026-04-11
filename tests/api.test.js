@@ -1,8 +1,15 @@
 process.env.API_KEY = 'test-api-key';
 process.env.DB_PATH = './test.db';
 
+const fs = require('fs');
+try { fs.unlinkSync('./test.db'); } catch (_) {}
+
 const request = require('supertest');
 const app = require('../src/app');
+
+afterAll(() => {
+  try { fs.unlinkSync('./test.db'); } catch (_) {}
+});
 
 const headers = { 'X-API-Key': 'test-api-key' };
 
