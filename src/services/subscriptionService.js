@@ -21,14 +21,15 @@ async function subscribe(email, owner, repo) {
     return { status: 409, error: 'Subscription already exists' };
   }
 
-  const token = generateToken();
+  const confirmToken = generateToken();
+  const unsubscribeToken = generateToken();
   db.prepare(
-    'INSERT INTO subscriptions (email, repository_id, token) VALUES (?, ?, ?)'
-  ).run(email, repository.id, token);
+    'INSERT INTO subscriptions (email, repository_id, token, unsubscribe_token) VALUES (?, ?, ?, ?)'
+  ).run(email, repository.id, confirmToken, unsubscribeToken);
 
-  await sendConfirmationEmail(email, token);
+  await sendConfirmationEmail(email, confirmToken, unsubscribeToken);
 
-  return { status: 200, token };
+  return { status: 200, token: confirmToken };
 }
 
 function confirm(token) {
@@ -48,42 +49,49 @@ function confirm(token) {
 }
 
 function unsubscribe(token) {
-  const subscription = db.prepare('SELECT id FROM subscriptions WHERE token = ?').get(token);
+  const subscription = db.prepare('SELECT id FROM subscriptions WHERE unsubscribe_token = ?').get(token);
 
   if (!subscription) {
     return { status: 404, error: 'Token not found' };
   }
 
-  db.prepare('DELETE FROM subscriptions WHERE token = ?').run(token);
+  db.prepare('DELETE FROM subscriptions WHERE unsubscribe_token = ?').run(token);
 
   return { status: 200, message: 'Unsubscribed successfully' };
 }
 
-function getSubscriptions(email, page = 1, limit = 10) {
-  const offset = (page - 1) * limit;
+function getSubscriptions(email, page, limit) {
+  const paginate = page !== undefined && limit !== undefined;
 
-  const total = db.prepare(`
-    SELECT COUNT(*) as count
-    FROM subscriptions s
-    JOIN repositories r ON r.id = s.repository_id
-    WHERE s.email = ? AND s.confirmed = true
-  `).get(email).count;
+  const total = db.prepare(
+    'SELECT COUNT(*) as count FROM subscriptions s WHERE s.email = ? AND s.confirmed = true'
+  ).get(email).count;
 
-  const rows = db.prepare(`
-    SELECT r.owner, r.repo, s.created_at
-    FROM subscriptions s
-    JOIN repositories r ON r.id = s.repository_id
-    WHERE s.email = ? AND s.confirmed = true
-    LIMIT ? OFFSET ?
-  `).all(email, limit, offset);
+  let rows;
+  if (paginate) {
+    const offset = (page - 1) * limit;
+    rows = db.prepare(`
+      SELECT r.owner, r.repo, s.created_at
+      FROM subscriptions s
+      JOIN repositories r ON r.id = s.repository_id
+      WHERE s.email = ? AND s.confirmed = true
+      LIMIT ? OFFSET ?
+    `).all(email, limit, offset);
+  } else {
+    rows = db.prepare(`
+      SELECT r.owner, r.repo, s.created_at
+      FROM subscriptions s
+      JOIN repositories r ON r.id = s.repository_id
+      WHERE s.email = ? AND s.confirmed = true
+    `).all(email);
+  }
 
-  return {
-    data: rows.map((row) => ({
-      repo: `${row.owner}/${row.repo}`,
-      created_at: row.created_at
-    })),
-    meta: { total, page, limit }
-  };
+  const data = rows.map((row) => ({
+    repo: `${row.owner}/${row.repo}`,
+    created_at: row.created_at
+  }));
+
+  return { data, meta: { total, page: page ?? null, limit: limit ?? null } };
 }
 
 module.exports = { subscribe, confirm, unsubscribe, getSubscriptions };
