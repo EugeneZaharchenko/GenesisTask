@@ -114,24 +114,44 @@ describe('unsubscribe', () => {
 });
 
 describe('getSubscriptions', () => {
-  test('returns list of confirmed subscriptions', () => {
-    db.prepare.mockReturnValue({
-      all: jest.fn().mockReturnValue([
-        { owner: 'expressjs', repo: 'express', created_at: '2026-04-09 10:00:00' },
-      ]),
-    });
+  test('returns all confirmed subscriptions as array when no pagination args', () => {
+    db.prepare
+      .mockReturnValueOnce({ get: jest.fn().mockReturnValue({ count: 1 }) })
+      .mockReturnValueOnce({
+        all: jest.fn().mockReturnValue([
+          { owner: 'expressjs', repo: 'express', created_at: '2026-04-09 10:00:00' },
+        ]),
+      });
 
     const result = getSubscriptions('user@example.com');
 
+    expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(1);
     expect(result[0].repo).toBe('expressjs/express');
   });
 
-  test('returns empty array if no subscriptions', () => {
-    db.prepare.mockReturnValue({ all: jest.fn().mockReturnValue([]) });
+  test('returns empty array if no subscriptions when no pagination args', () => {
+    db.prepare
+      .mockReturnValueOnce({ get: jest.fn().mockReturnValue({ count: 0 }) })
+      .mockReturnValueOnce({ all: jest.fn().mockReturnValue([]) });
 
     const result = getSubscriptions('nobody@example.com');
 
     expect(result).toEqual([]);
+  });
+
+  test('returns paginated envelope when page and limit provided', () => {
+    db.prepare
+      .mockReturnValueOnce({ get: jest.fn().mockReturnValue({ count: 5 }) })
+      .mockReturnValueOnce({
+        all: jest.fn().mockReturnValue([
+          { owner: 'expressjs', repo: 'express', created_at: '2026-04-09 10:00:00' },
+        ]),
+      });
+
+    const result = getSubscriptions('user@example.com', 1, 10);
+
+    expect(result.data).toHaveLength(1);
+    expect(result.meta).toEqual({ total: 5, page: 1, limit: 10 });
   });
 });

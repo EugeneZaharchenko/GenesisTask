@@ -60,18 +60,42 @@ function unsubscribe(token) {
   return { status: 200, message: 'Unsubscribed successfully' };
 }
 
-function getSubscriptions(email) {
-  const rows = db.prepare(`
-    SELECT r.owner, r.repo, s.created_at
-    FROM subscriptions s
-    JOIN repositories r ON r.id = s.repository_id
-    WHERE s.email = ? AND s.confirmed = true
-  `).all(email);
+function getSubscriptions(email, page, limit) {
+  const paginate = page !== undefined && limit !== undefined;
 
-  return rows.map((row) => ({
+  const total = db.prepare(
+    'SELECT COUNT(*) as count FROM subscriptions s WHERE s.email = ? AND s.confirmed = true'
+  ).get(email).count;
+
+  let rows;
+  if (paginate) {
+    const offset = (page - 1) * limit;
+    rows = db.prepare(`
+      SELECT r.owner, r.repo, s.created_at
+      FROM subscriptions s
+      JOIN repositories r ON r.id = s.repository_id
+      WHERE s.email = ? AND s.confirmed = true
+      LIMIT ? OFFSET ?
+    `).all(email, limit, offset);
+  } else {
+    rows = db.prepare(`
+      SELECT r.owner, r.repo, s.created_at
+      FROM subscriptions s
+      JOIN repositories r ON r.id = s.repository_id
+      WHERE s.email = ? AND s.confirmed = true
+    `).all(email);
+  }
+
+  const data = rows.map((row) => ({
     repo: `${row.owner}/${row.repo}`,
     created_at: row.created_at
   }));
+
+  if (paginate) {
+    return { data, meta: { total, page, limit } };
+  }
+
+  return data;
 }
 
 module.exports = { subscribe, confirm, unsubscribe, getSubscriptions };

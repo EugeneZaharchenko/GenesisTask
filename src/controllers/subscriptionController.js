@@ -41,15 +41,26 @@ function handleUnsubscribe(req, res) {
 }
 
 function handleGetSubscriptions(req, res) {
-  const { email } = req.query;
+  const { email, page, limit } = req.query;
 
   if (!email || !EMAIL_REGEX.test(email)) {
     return res.status(400).json({ error: 'Invalid email format' });
   }
 
-  const subscriptions = getSubscriptions(email);
+  const parsedPage = page !== undefined ? parseInt(page, 10) : undefined;
+  const parsedLimit = limit !== undefined ? parseInt(limit, 10) : undefined;
 
-  return res.status(200).json(subscriptions);
+  if (parsedPage !== undefined && (isNaN(parsedPage) || parsedPage < 1)) {
+    return res.status(400).json({ error: 'Invalid page number' });
+  }
+
+  if (parsedLimit !== undefined && (isNaN(parsedLimit) || parsedLimit < 1)) {
+    return res.status(400).json({ error: 'Invalid limit value' });
+  }
+
+  const result = getSubscriptions(email, parsedPage, parsedLimit);
+
+  return res.status(200).json(result);
 }
 
 module.exports = { handleSubscribe, handleConfirm, handleUnsubscribe, handleGetSubscriptions };
