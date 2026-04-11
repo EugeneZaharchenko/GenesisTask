@@ -36,7 +36,9 @@ async function checkReleases() {
 }
 
 function startScanner() {
-  setInterval(checkReleases, INTERVAL_MS);
+  const run = () => checkReleases().catch((err) => console.error('Scanner error:', err.message));
+  run();
+  setInterval(run, INTERVAL_MS);
 }
 
 module.exports = { startScanner };
