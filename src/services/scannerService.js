@@ -1,10 +1,16 @@
 const db = require('../db/database');
 const { getLatestRelease } = require('./githubService');
 const { sendReleaseNotification } = require('./emailService');
+const { scannerRunsTotal, confirmedSubscriptionsGauge } = require('./metricsService');
 
 const INTERVAL_MS = parseInt(process.env.SCANNER_INTERVAL_MS) || 5 * 60 * 1000;
 
 async function checkReleases() {
+  scannerRunsTotal.inc();
+
+  const count = db.prepare('SELECT COUNT(*) as count FROM subscriptions WHERE confirmed = true').get().count;
+  confirmedSubscriptionsGauge.set(count);
+
   const repos = db.prepare(`
     SELECT DISTINCT r.id, r.owner, r.repo, r.last_seen_tag
     FROM repositories r
