@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { emailsSentTotal } = require('./metricsService');
 
 let transporter = null;
 
@@ -27,6 +28,7 @@ async function sendConfirmationEmail(email, confirmToken, unsubscribeToken) {
     text: `Please confirm your subscription: /api/confirm/${confirmToken}\n\nTo unsubscribe at any time: /api/unsubscribe/${unsubscribeToken}`,
   });
 
+  emailsSentTotal.inc({ type: 'confirmation' });
   console.log('Confirmation email preview: ' + nodemailer.getTestMessageUrl(info));
 }
 
@@ -39,6 +41,7 @@ async function sendReleaseNotification(email, repo, tagName) {
     text: `A new release is available for ${repo}: ${tagName}`,
   });
 
+  emailsSentTotal.inc({ type: 'release' });
   console.log('Release notification preview: ' + nodemailer.getTestMessageUrl(info));
 }
 
